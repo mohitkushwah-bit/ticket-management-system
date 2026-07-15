@@ -20,11 +20,8 @@ A full-stack internal support ticket management application with a React fronten
 ### 1. Configure Environment
 
 ```bash
-# Backend environment
-cp backend/.env.example backend/.env
-
-# Frontend environment
-cp frontend/.env.example frontend/.env
+cp src/backend/.env.example src/backend/.env
+cp src/frontend/.env.example src/frontend/.env
 ```
 
 ### 2. Start All Services
@@ -44,9 +41,9 @@ This starts:
 docker-compose up db -d
 ```
 
-Then run backend/frontend locally — see their respective READMEs:
-- [Backend README](backend/README.md)
-- [Frontend README](frontend/README.md)
+Then run backend/frontend locally:
+- [Backend README](src/backend/README.md)
+- [Frontend README](src/frontend/README.md)
 
 ### Stop Services
 
@@ -54,14 +51,51 @@ Then run backend/frontend locally — see their respective READMEs:
 docker-compose down
 ```
 
-## Project Structure
+## Repository Structure (Submission Layout)
 
 ```
 ticket-management-system/
-├── frontend/           # React application
-├── backend/            # Node.js API + database migrations
-├── docker-compose.yml  # Container orchestration
-└── README.md
+├── README.md
+├── candidate-info.md
+├── tool-workflow.md
+├── requirements-analysis.md
+├── acceptance-criteria.md
+├── implementation-plan.md
+├── design-notes.md
+├── api-contract.md
+├── data-model.md
+├── ui-flow.md
+├── test-strategy.md
+├── test-results.md
+├── debugging-notes.md
+├── code-review-notes.md
+├── review-fixes.md
+├── pr-description.md
+├── reflection.md
+├── final-ai-usage-summary.md
+├── src/
+│   ├── frontend/          # React application
+│   └── backend/           # Node.js API
+├── tests/
+│   ├── backend/           # Jest integration tests
+│   └── frontend/          # Vitest component tests
+├── database/
+│   ├── migrations/
+│   ├── seeds/
+│   └── setup-notes.md
+├── ai-prompts/            # Grouped prompt history
+└── tool-specific/
+    └── other-tool-workflow/
+```
+
+## Running Tests
+
+```bash
+# Backend integration tests (requires PostgreSQL)
+cd src/backend && npm run test:integration
+
+# Frontend tests
+cd src/frontend && npm test
 ```
 
 ## Status State Machine
@@ -72,6 +106,16 @@ Open → Cancelled
 In Progress → Cancelled
 ```
 
-## screenshots.pdf file has been attached to get a glimpse of the screens.
+## Submission Artifacts
 
-### Note: .env files only contains dummy values and placeholders. They have been pushed only to provide a structure of .env file and variables. Add these files to .gitignore later.
+| Document | Description |
+|----------|-------------|
+| [tool-workflow.md](tool-workflow.md) | AI workflow foundation (Part A) |
+| [requirements-analysis.md](requirements-analysis.md) | Requirement analysis |
+| [design-notes.md](design-notes.md) | Architecture and design decisions |
+| [api-contract.md](api-contract.md) | REST API contract |
+| [ai-prompts/](ai-prompts/) | Grouped AI prompt history |
+
+See `screenshots.pdf` for UI screenshots.
+
+**Note:** `.env` files contain placeholder values only. Do not commit real credentials.

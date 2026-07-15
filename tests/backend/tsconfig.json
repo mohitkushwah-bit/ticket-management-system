@@ -1,0 +1,16 @@
+{
+  "extends": "../../src/backend/tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": "../..",
+    "types": ["node", "jest"],
+    "typeRoots": ["../../src/backend/node_modules/@types"],
+    "moduleResolution": "node",
+    "baseUrl": "../../src/backend",
+    "paths": {
+      "supertest": ["node_modules/supertest"],
+      "jsonwebtoken": ["node_modules/jsonwebtoken"]
+    }
+  },
+  "include": ["./**/*", "../../src/backend/src/**/*"]
+}

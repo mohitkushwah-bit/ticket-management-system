@@ -1,19 +1,20 @@
 # Design Notes — Support Ticket Management System
 
-Architecture and design decisions for this project, grounded in the implemented codebase and `tool-specific/other-tool-workflow/requirements.md`.
+Comprehensive architecture reference grounded in `src/backend/`, `src/frontend/`, `database/`, and `.copilot-sessions/` prompt history. For submission summary, see also [design-notes.md](design-notes.md).
 
 ---
 
 ## 1. System Overview
 
-A full-stack internal support ticket application with:
+| Component | Path | Stack |
+|-----------|------|-------|
+| Frontend | `src/frontend/` | React 18, TypeScript, Vite |
+| Backend | `src/backend/` | Node.js 20, Express, TypeScript |
+| Database | `database/` | PostgreSQL 16 |
+| Tests | `tests/backend/`, `tests/frontend/` | Jest, Vitest |
+| Infrastructure | `docker-compose.yml` | Docker Compose (db, backend, frontend) |
 
-- **Frontend:** React 18 + TypeScript + Vite (`frontend/`)
-- **Backend:** Node.js + Express + TypeScript (`backend/`)
-- **Database:** PostgreSQL 16 (`backend/database/`)
-- **Infrastructure:** Docker Compose (`docker-compose.yml`)
-
-The frontend and backend are independent applications communicating only over HTTP. Each has its own `package.json`, `tsconfig.json`, and `.env` configuration.
+Apps communicate only over HTTP. Each has its own `package.json`, `tsconfig.json`, and `.env`.
 
 ---
 
@@ -21,85 +22,66 @@ The frontend and backend are independent applications communicating only over HT
 
 ### 2.1 Monorepo with Application Separation
 
-**Decision:** Two top-level app folders (`frontend/`, `backend/`) with shared-nothing runtime.
+**Decision:** `src/frontend/` and `src/backend/` with shared-nothing runtime.
 
-**Rationale:** Clear ownership boundaries, independent deployability, and alignment with `tool-specific/other-tool-workflow/requirements.md` non-functional requirements.
+**Rationale:** Prompt (2026-07-06): *"Create two folders one for frontend and one for backend"* with scalability NFR. Evolved to `src/` layout for submission structure.
 
-**Evidence:** `docker-compose.yml` builds and runs three services (`db`, `backend`, `frontend`) from separate contexts.
+**Evidence:** `docker-compose.yml` builds three services from `./src/backend` and `./src/frontend` contexts.
 
 ### 2.2 Backend Layered Architecture
 
-**Decision:** Controller → Service → Repository pattern.
-
 ```
-HTTP Request
-  → routes/          (routing + Zod validation schemas)
-  → controllers/     (request/response mapping)
-  → services/        (business logic)
-  → repositories/    (SQL via pg)
-  → PostgreSQL
+HTTP → routes/ → controllers/ → services/ → repositories/ → PostgreSQL
 ```
-
-**Rationale:** Separates framework concerns from business logic and enables unit/integration testing at the service layer with injectable repositories.
 
 **Evidence:**
-- `backend/src/services/ticket.service.ts` — state machine enforcement in service layer
-- `backend/src/repositories/ticket.repository.ts` — parameterized SQL queries
-- `backend/src/controllers/ticket.controller.ts` — thin HTTP handlers
+- `src/backend/src/services/ticket.service.ts` — state machine + optimistic concurrency
+- `src/backend/src/repositories/ticket.repository.ts` — parameterized SQL, `COUNT(*) OVER()`
+- `src/backend/src/controllers/ticket.controller.ts` — thin handlers
 
-**Dependency injection:** Services accept optional repository instances in constructors (e.g., `TicketService(ticketRepository?)`), supporting testability without a DI framework.
+**DI:** Optional repository injection in service constructors for testability.
 
 ### 2.3 Frontend Layered Architecture
 
-**Decision:** Pages → Components → Services → API.
-
 ```
-User Interaction
-  → pages/           (route-level views)
-  → components/      (reusable UI, including common/ design system)
-  → services/        (API client modules per domain)
-  → api.ts           (Axios instance with JWT interceptors)
-  → Backend REST API
+User → pages/ → components/ → services/ → api.ts → Backend API
 ```
 
 **Evidence:**
-- `frontend/src/App.tsx` — route definitions with lazy-loaded pages
-- `frontend/src/services/ticket.service.ts`, `auth.service.ts` — domain API wrappers
-- `frontend/src/context/AuthContext.tsx`, `ToastContext.tsx` — cross-cutting state
+- `src/frontend/src/App.tsx` — lazy routes with `Suspense`
+- `src/frontend/src/services/ticket.service.ts`, `auth.service.ts`
+- `src/frontend/src/context/AuthContext.tsx`, `ToastContext.tsx`
 
 ### 2.4 Database Location
 
-**Decision:** Database scripts live inside `backend/database/` (not a top-level `database/` folder).
+**Decision:** Top-level `database/` folder (submission layout).
 
-**Rationale:** Co-locates schema with the API that owns it. Evolved during development — session log shows a prompt at 11:57 to move the database folder into backend, followed by path updates across the project.
+**History:** Merged migrations (2026-07-10 11:54) → moved into `backend/database/` (11:57) → relocated to root `database/` for assessment structure.
 
 **Evidence:**
-- `backend/database/migrations/001_initial_schema.sql`
-- `backend/database/seeds/seed.sql`
-- `docker-compose.yml` mounts migrations from `./backend/database/`
+- `database/migrations/001_initial_schema.sql`
+- `database/seeds/seed.sql`
+- `docker-compose.yml` volume mounts from `./database/`
 
 ---
 
 ## 3. Core Design: Status State Machine
 
-The state machine is the signature business rule of this system.
-
 ### 3.1 Valid Transitions
 
 ```
-Open         → In Progress, Cancelled
-In Progress  → Resolved, Cancelled
-Resolved     → Closed
-Closed       → (terminal)
-Cancelled    → (terminal)
+open         → in_progress, cancelled
+in_progress  → resolved, cancelled
+resolved     → closed
+closed       → (terminal)
+cancelled    → (terminal)
 ```
 
-### 3.2 Implementation Strategy
+### 3.2 Implementation
 
-**Decision:** Single source of truth in `backend/src/models/state-machine.ts`, enforced in the service layer, validated by integration tests.
+**Canonical module:** `src/backend/src/models/state-machine.ts`
 
 ```typescript
-// backend/src/models/state-machine.ts
 const VALID_TRANSITIONS: Record<TicketStatus, TicketStatus[]> = {
   open: ['in_progress', 'cancelled'],
   in_progress: ['resolved', 'cancelled'],
@@ -110,15 +92,14 @@ const VALID_TRANSITIONS: Record<TicketStatus, TicketStatus[]> = {
 ```
 
 **Service enforcement** (`ticket.service.ts`):
-- Calls `isValidTransition()` before updating
-- Returns HTTP 422 with valid-next-statuses message on invalid transition
-- Uses `updateStatusAtomic()` with optimistic concurrency (409 on race condition)
+- `isValidTransition()` check → 422 with valid next statuses
+- `updateStatusAtomic()` → 409 on race condition
 
 **Frontend enforcement:**
-- `TicketDetailPage` — shows only valid transition buttons via `getValidTransitions()`
-- `KanbanBoard` — drag-and-drop calls status API; invalid drops rejected with toast and card snap-back
+- `TicketDetailPage` — transition buttons from `VALID_TRANSITIONS`
+- `KanbanBoard` — client pre-check + API call; `KanbanPage.handleStatusChange` returns boolean for snap-back
 
-**Test evidence:** `backend/tests/state-machine.test.ts` — all valid transitions pass, all invalid transitions return 400/422.
+**Tests:** `tests/backend/state-machine.test.ts` — 11 cases covering all valid/invalid paths.
 
 ---
 
@@ -126,47 +107,41 @@ const VALID_TRANSITIONS: Record<TicketStatus, TicketStatus[]> = {
 
 ### 4.1 JWT Authentication
 
-**Decision:** Stateless JWT bearer tokens, not server-side sessions.
+Built per prompt (2026-07-08): login, encrypted password, logout, profile screen.
 
-**Backend flow:**
-1. `POST /api/auth/login` — validates credentials, returns JWT
-2. `authenticate` middleware (`backend/src/middleware/auth.ts`) — verifies token on protected routes
-3. `authorize` middleware — checks role permissions per endpoint
+| Step | Implementation |
+|------|----------------|
+| Login | `POST /api/auth/login` → JWT |
+| Middleware | `src/backend/src/middleware/auth.ts` |
+| Frontend storage | `localStorage` token via `AuthContext` |
+| Interceptor | `src/frontend/src/services/api.ts` attaches Bearer header |
+| 401 handling | Clear auth, redirect `/login` |
 
-**Frontend flow:**
-1. Login stores token in `localStorage`
-2. `api.ts` Axios interceptor attaches `Authorization: Bearer <token>`
-3. 401 responses clear auth state and redirect to `/login`
-4. `ProtectedRoute`, `AdminRoute`, `WriterRoute` guard frontend routes
+### 4.2 Role-Based Access Control
 
-### 4.2 Role-Based Access Control (RBAC)
+Built per prompts (2026-07-09): roles table, user CRUD, checkbox permissions matrix.
 
-**Decision:** Database-driven roles with JSONB permissions matrix, not hardcoded role checks only.
+| Role | Ticket write | Admin screens |
+|------|-------------|---------------|
+| admin | Yes | Yes (users, roles) |
+| user | Yes | No |
+| agent | No (read-only) | No |
 
-**Schema** (`001_initial_schema.sql`):
-- `roles` table with `permissions JSONB` per screen (`dashboard`, `tickets`, `kanban`, `users`, `roles`)
-- Default roles: `admin`, `agent`, `user`
+**Backend:** `authorize('admin', 'user')` on ticket write routes in `ticket.routes.ts`  
+**Frontend:** `WriterRoute` (create/edit), `AdminRoute` (users/roles), `useRole().canWrite`
 
-**Frontend:** `useRole` hook reads permissions from auth context; route guards enforce screen-level access.
-
-**Backend:** `authorize` middleware checks role name against allowed roles per route.
+**Permissions JSONB:** Per-screen `{ read, write }` in `roles.permissions` — editable via `RoleFormModal`.
 
 ---
 
 ## 5. Data Model
 
-| Entity | Key Fields | Notes |
-|--------|-----------|-------|
-| **Role** | id, name, permissions (JSONB) | Stretch feature — full CRUD UI |
-| **User** | id, name, email, password_hash, role_id | bcrypt password hashing |
-| **Ticket** | id, title, description, priority, status, assigned_to, pr_link, created_by | UUID PKs, enum types |
-| **Comment** | id, ticket_id, message, created_by | Immutable in core scope |
+See [data-model.md](data-model.md) for full schema. Key entities: Role, User, Ticket, Comment.
 
-**PostgreSQL enums:** `ticket_priority`, `ticket_status` — enforced at DB level.
-
-**Search optimization:** `pg_trgm` extension enabled for trigram-based keyword search on ticket title/description.
-
-**Indexing:** Status and priority columns indexed for filter queries (see migration file).
+- UUID PKs throughout
+- `ticket_priority`, `ticket_status` PostgreSQL enums
+- `pr_link VARCHAR(2048)` — added 2026-07-06
+- `pg_trgm` + `ILIKE` for partial search — fixed 2026-07-07
 
 ---
 
@@ -174,48 +149,45 @@ const VALID_TRANSITIONS: Record<TicketStatus, TicketStatus[]> = {
 
 ### 6.1 REST Conventions
 
-- Plural nouns: `/api/tickets`, `/api/users`, `/api/roles`
-- Status changes on dedicated endpoint: `PATCH /api/tickets/:id/status`
-- Comments nested under tickets: `/api/tickets/:id/comments`
-- Consistent error format: `{ errors: [{ message, field? }] }`
+- `/api/tickets`, `/api/users`, `/api/roles`, `/api/auth`
+- `PATCH /api/tickets/:id/status` for state machine
+- Nested comments: `/api/tickets/:id/comments`
+- Stats: `/api/tickets/stats/status-counts`, `/stats/resolved-all`
 
 ### 6.2 Validation
 
-**Decision:** Zod schemas in `backend/src/routes/validation-schemas.ts`, applied via `validate` middleware.
-
-Validates request body/query before reaching controllers. Returns 400/422 with structured field errors.
+Zod in `src/backend/src/routes/validation-schemas.ts` → `validate` middleware → 400/422.
 
 ### 6.3 Pagination & Filtering
 
-`GET /api/tickets` supports:
-- `?search=` — keyword (title + description)
-- `?status=` — status filter
-- `?priority=` — priority filter
-- `?page=` / `?limit=` — pagination
-- `?sortBy=` / `?sortOrder=` — sorting
+`GET /api/tickets` supports `search`, `status`, `priority`, `assignee`, `page`, `limit`, `sortBy`, `sortOrder`.
 
-**Query optimization:** `findAll` uses `COUNT(*) OVER()` window function to return total count in a single query (applied during optimization session at 13:58–14:07).
+Added per prompt (2026-07-07): filter by priority and assignee, sorting, pagination.
 
-### 6.4 API Documentation
+**Query optimization (2026-07-10):** `COUNT(*) OVER()` in `ticket.repository.ts` `findAll()`.
 
-Swagger UI at `/api-docs` (non-production only), configured in `backend/src/config/swagger.ts`. Added per session prompt at 11:29.
+### 6.4 Swagger
+
+`src/backend/src/config/swagger.ts` — prompt 2026-07-10 11:29. UI at `/api-docs` (non-production).
 
 ---
 
 ## 7. Security Design
 
-| Concern | Implementation | Evidence |
-|---------|---------------|----------|
-| HTTP headers | `helmet()` | `backend/src/app.ts` |
-| CORS | Configurable via `ALLOWED_ORIGINS` env | `backend/src/app.ts` |
-| Body size limit | `express.json({ limit: '10kb' })` | `backend/src/app.ts` |
-| Rate limiting | `express-rate-limit` | `backend/package.json` |
-| Password storage | bcrypt hashing | `backend/src/services/auth.service.ts` |
-| SQL injection | Parameterized queries only | All `repositories/` files |
-| Secrets | Environment variables via `config/env.ts` | `.env.example` placeholders |
-| Swagger exposure | Disabled in production | `backend/src/app.ts` |
+Hardened in session 2026-07-10 (14:41–14:51):
 
-Security hardening was driven by a dedicated session (14:41–14:51) using `/find-bugs` and explicit security audit prompts.
+| Concern | Implementation | File |
+|---------|---------------|------|
+| HTTP headers | `helmet()` | `src/backend/src/app.ts` |
+| CORS | `ALLOWED_ORIGINS` env | `src/backend/src/app.ts` |
+| Body limit | `10kb` | `src/backend/src/app.ts` |
+| Rate limiting | `express-rate-limit` | `src/backend/src/app.ts` |
+| Passwords | bcrypt `$2b$12$` | `auth.service.ts` |
+| SQL injection | Parameterized queries | all `repositories/` |
+| Secrets | `config/env.ts` | `.env.example` placeholders |
+| Swagger | Production disabled | `src/backend/src/app.ts` |
+
+**Rejected:** Dummy hash timing attack mitigation (14:53–14:56).
 
 ---
 
@@ -223,104 +195,66 @@ Security hardening was driven by a dedicated session (14:41–14:51) using `/fin
 
 ### 8.1 CSS Variables
 
-**Decision:** Token-based design system in `frontend/src/styles/variables.css`.
+`src/frontend/src/styles/variables.css` — slate/blue primary, semantic status colors, spacing/typography scales.
 
-- Primary palette: slate/blue (`--color-primary: #3b82f6`)
-- Semantic status colors per ticket state
-- Spacing scale: `--space-xs` through `--space-2xl`
-- Typography scale: `--font-size-xs` through `--font-size-3xl`
+### 8.2 Common Components
 
-Enforced by `.github/instructions/design-system.instructions.md` (auto-applied to `*.tsx`, `*.css`).
+Prompt (2026-07-06): *"create common controls for repetitive frontend UI"* → `components/common/`.
 
-### 8.2 Component Library
+### 8.3 Performance (2026-07-10 optimization sessions)
 
-Reusable primitives in `frontend/src/components/common/`:
-- `Button`, `Input`, `TextArea`, `Select`, `Card`, `Badge`, `Toast`, `LoadingSpinner`
-
-Feature components: `KanbanBoard`, `TicketForm`, `SearchFilter`, `CommentList`, `StatusBadge`.
-
-### 8.3 Performance Patterns
-
-Applied during optimization sessions (documented in `.copilot-sessions/prompts_2026-07-10.log`):
-
-| Pattern | Where |
-|---------|-------|
-| `React.lazy` + `Suspense` | `App.tsx` — non-critical pages |
-| `useMemo` / `useCallback` | `AuthContext`, `ToastContext`, `KanbanBoard`, `SearchFilter` |
-| `React.memo` | `KanbanColumn` |
-| Debounced search (300ms) | `SearchFilter.tsx` |
-| Consolidated dashboard queries | `DashboardPage` + backend `getResolvedCountsAll` |
+| Pattern | Location |
+|---------|----------|
+| `React.lazy` + `Suspense` | `App.tsx` |
+| `useMemo` / `useCallback` | Contexts, KanbanBoard, SearchFilter, TicketDetailPage |
+| `React.memo` | `KanbanColumn.tsx` |
+| Debounced search (300ms) | `SearchFilter.tsx` (13:52 prompt) |
+| Consolidated dashboard stats | `DashboardPage` + `getResolvedCountsAll()` |
 
 ---
 
 ## 9. Testing Design
 
-### 9.1 Backend Integration Tests
+| Suite | Path | Cases |
+|-------|------|-------|
+| State machine | `tests/backend/state-machine.test.ts` | 11 |
+| Tickets | `tests/backend/tickets.test.ts` | 19 |
+| Comments | `tests/backend/comments.test.ts` | 6 |
+| Users | `tests/backend/users.test.ts` | 24 |
+| Roles | `tests/backend/roles.test.ts` | 20 |
+| Frontend | `tests/frontend/EditTicketPage.test.tsx` | 1 |
 
-**Framework:** Jest + Supertest + dedicated test database (`ticket_management_test`).
-
-**Suites** (`backend/tests/`):
-| File | Coverage |
-|------|----------|
-| `state-machine.test.ts` | All valid/invalid transitions (mandatory) |
-| `tickets.test.ts` | CRUD, search, filter, pagination |
-| `comments.test.ts` | Create, list, validation |
-| `users.test.ts` | User CRUD (admin) |
-| `roles.test.ts` | Role CRUD (admin) |
-
-**Setup:** `global-setup.ts` / `global-teardown.ts` manage test DB lifecycle. `helpers.ts` provides auth tokens and test user fixtures.
-
-### 9.2 Frontend Tests
-
-**Framework:** Vitest + React Testing Library + jsdom.
-
-**Coverage:** `EditTicketPage.test.tsx` — form rendering, validation, submit flow with mocked services.
-
-Frontend test coverage is intentionally lighter; backend integration tests are the primary quality gate.
+Setup: `tests/backend/global-setup.ts` creates `ticket_management_test` DB from `database/` scripts.
 
 ---
 
-## 10. Infrastructure Design
+## 10. Infrastructure
 
-### 10.1 Docker Compose
-
-Three-service stack:
-1. **db** — PostgreSQL 16 with healthcheck; auto-runs schema + seed on first start
-2. **backend** — Express API on port 3001
-3. **frontend** — Vite dev server on port 5173
-
-Environment variables sourced from per-app `.env` files via `env_file` directive.
-
-### 10.2 Environment Configuration
-
-| App | Config File | Key Variables |
-|-----|------------|---------------|
-| Backend | `backend/.env` | `DB_HOST`, `DB_PORT`, `JWT_SECRET`, `PORT` |
-| Frontend | `frontend/.env` | `VITE_API_URL` |
-
-`.env.example` files contain placeholders only. Real values are never committed.
+Docker Compose: PostgreSQL 16 (healthcheck) → backend :3001 → frontend :5173.  
+Env files: `src/backend/.env`, `src/frontend/.env` via `env_file` directive.
 
 ---
 
 ## 11. Key Trade-offs
 
-| Decision | Chosen | Alternative Considered | Why |
-|----------|--------|---------------------|-----|
-| Auth model | JWT (stateless) | Server sessions | Simpler for SPA + API separation |
-| State machine location | Dedicated module + service | DB triggers only | Testable, explicit error messages |
-| Role permissions | JSONB in DB | Hardcoded enum | Flexible screen-level RBAC without code changes |
-| Frontend routing | React Router v6 + lazy load | All pages eager-loaded | Smaller initial bundle |
-| Test strategy | Backend integration-heavy | Full E2E with Playwright | Faster feedback, covers critical business rules |
-| DB scripts | Inside `backend/` | Top-level `database/` | Co-location with API owner |
+| Decision | Chosen | Alternative | Why |
+|----------|--------|-------------|-----|
+| Auth | JWT stateless | Server sessions | SPA + API separation |
+| State machine | Service module | DB triggers only | Testable, clear 422 messages |
+| RBAC | JSONB permissions | Hardcoded only | Admin can edit role access without code change |
+| Search | ILIKE + trgm | Full-text only | Partial substring match requirement |
+| Tests | Integration-heavy | Full E2E | Faster feedback on business rules |
+| DB location | Top-level `database/` | Inside backend | Submission structure |
 
 ---
 
 ## 12. Traceability
 
 ```
-tool-specific/other-tool-workflow/requirements.md (state machine rules, API design)
-  → backend/src/models/state-machine.ts (canonical rules)
-  → backend/src/services/ticket.service.ts (enforcement)
-  → backend/tests/state-machine.test.ts (verification)
-  → frontend KanbanBoard + TicketDetailPage (UI enforcement)
+requirements-analysis.md (state machine, Kanban, PR link)
+  → src/backend/src/models/state-machine.ts
+  → src/backend/src/services/ticket.service.ts
+  → tests/backend/state-machine.test.ts
+  → src/frontend/src/components/KanbanBoard.tsx
+  → src/frontend/src/pages/TicketDetailPage.tsx
 ```
