@@ -1,0 +1,33 @@
+.profile-page {
+  max-width: 600px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.profile-page__title {
+  margin-bottom: var(--space-sm);
+}
+
+.profile-page__section-title {
+  font-size: var(--font-size-lg);
+  margin-bottom: var(--space-md);
+}
+
+.profile-page__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.profile-page__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.profile-page__label {
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}

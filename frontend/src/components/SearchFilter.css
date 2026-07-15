@@ -1,0 +1,19 @@
+.search-filter {
+  display: flex;
+  gap: var(--space-md);
+  align-items: flex-end;
+  flex-wrap: wrap;
+  margin-bottom: var(--space-md);
+}
+
+.search-filter__search {
+  flex: 1;
+  min-width: 200px;
+}
+
+.search-filter__status,
+.search-filter__priority,
+.search-filter__assignee,
+.search-filter__sort {
+  min-width: 160px;
+}

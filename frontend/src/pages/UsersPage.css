@@ -1,0 +1,91 @@
+.users-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.users-page__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.users-page__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  margin-top: var(--space-md);
+}
+
+.users-page__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.users-page__field label {
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.users-page__form-actions {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.users-page__table-wrapper {
+  overflow-x: auto;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.users-page__table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.users-page__table th {
+  text-align: left;
+  padding: var(--space-md);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  border-bottom: 1px solid var(--color-border);
+  background-color: var(--color-bg);
+}
+
+.users-page__table td {
+  padding: var(--space-md);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.users-page__role {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.users-page__role--admin {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.users-page__role--agent {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.users-page__role--user {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.users-page__actions {
+  display: flex;
+  gap: var(--space-xs);
+}

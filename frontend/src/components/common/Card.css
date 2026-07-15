@@ -1,0 +1,27 @@
+.card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  width: 100%;
+  text-align: left;
+}
+
+.card--pad-sm { padding: var(--space-sm); }
+.card--pad-md { padding: var(--space-md); }
+.card--pad-lg { padding: var(--space-lg); }
+
+.card--hoverable {
+  transition: box-shadow var(--transition-fast), transform var(--transition-fast);
+  cursor: pointer;
+}
+
+.card--hoverable:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+button.card {
+  border: 1px solid var(--color-border);
+  font: inherit;
+}

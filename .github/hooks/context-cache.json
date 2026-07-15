@@ -1,0 +1,11 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "type": "command",
+        "command": "./scripts/hooks/cache-context.sh",
+        "timeout": 15
+      }
+    ]
+  }
+}
