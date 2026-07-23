@@ -24,4 +24,4 @@ Chronological exports in [prompt-history/](prompt-history/) — one file per dev
 1. Start with [../tool-workflow.md](../tool-workflow.md) for workflow overview
 2. Read [../final-ai-usage-summary.md](../final-ai-usage-summary.md) for lifecycle table
 3. Drill into phase files above for representative prompts
-4. Use `prompt-history/` for verbatim session transcripts
+4. Use `/ai-prompts/` for verbatim session transcripts
