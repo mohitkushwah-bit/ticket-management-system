@@ -17,7 +17,7 @@
 
 ## Session Logs
 
-Chronological exports in [prompt-history/](prompt-history/) — one file per development session (2026-07-06 through 2026-07-10).
+Chronological exports in [/ai-prompts/](/ai-prompts/) — one file per development session (2026-07-06 through 2026-07-10).
 
 ## How to Read
 
