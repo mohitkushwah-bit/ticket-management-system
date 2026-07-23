@@ -19,6 +19,9 @@ Multiple review passes using `@review`, `/find-bugs`, and explicit security audi
 | Auth middleware | Applied consistently on protected routes | — |
 | CORS | Initially permissive; hardened to `ALLOWED_ORIGINS` | Major |
 | Rate limiting | Missing initially; added `express-rate-limit` | Major |
+| Input sanitization | Added `sanitizeText()` in Zod schemas (2026-07-16) | Major |
+| JWT secrets | Production requires `JWT_SECRET` ≥ 32 chars (2026-07-16) | Major |
+| DB state machine | Added PostgreSQL trigger migration (2026-07-16) | Minor |
 | Helmet | Missing initially; added for security headers | Major |
 | Swagger | Exposed in all environments initially; gated to non-production | Minor |
 | Frontend perf | Missing memoization on Kanban; addressed in optimization pass | Minor |

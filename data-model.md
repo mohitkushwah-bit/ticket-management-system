@@ -106,15 +106,16 @@ closed       → (terminal)
 cancelled    → (terminal)
 ```
 
-**Implementation:** `src/backend/src/models/state-machine.ts`  
-**Enforcement:** `src/backend/src/services/ticket.service.ts` → `changeStatus()`  
-**UI mirror:** `VALID_TRANSITIONS` in `src/frontend/src/types/index.ts` used by `KanbanBoard` and `TicketDetailPage`
+**Enforcement layers:**
+1. **Application:** `src/backend/src/models/state-machine.ts` → `ticket.service.ts`
+2. **Database:** `database/migrations/002_status_transition_trigger.sql` — `BEFORE UPDATE` trigger rejects invalid transitions at the schema layer
 
 ## Schema & Seed Locations
 
 | Artifact | Path |
 |----------|------|
-| Migration | `database/migrations/001_initial_schema.sql` |
+| Initial migration | `database/migrations/001_initial_schema.sql` |
+| Status transition trigger | `database/migrations/002_status_transition_trigger.sql` |
 | Seed data | `database/seeds/seed.sql` |
 | Setup notes | `database/setup-notes.md` |
 | TypeScript types | `src/backend/src/models/types.ts` |

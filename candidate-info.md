@@ -4,8 +4,8 @@
 **Role:** Full-Stack Developer  
 **Primary Technology Stack:** React, TypeScript, Node.js, Express, PostgreSQL, Docker
 
-**Primary AI Tool Used:** GitHub Copilot (Claude) in VS Code  
-**Project Option Selected:** Ticket Management System (Support Ticket Application)
+**Primary AI Tool Used:** GitHub Copilot (**Claude** model) in VS Code custom agent mode  
+**Evidence:** `tool-workflow.md`, `ai-prompts/prompt-history/`, `.copilot-sessions/`, `final-ai-usage-summary.md`
 
 **Assessment Start Date:** 2026-07-06  
 **Submission Date:** 2026-07-15

@@ -16,7 +16,7 @@ Evidence-based summary from `.copilot-sessions/` (2026-07-06 through 2026-07-10)
 | Requirements | "add PR link, Kanban, integration tests" (07-06) | `@task-planner` | `requirements-analysis.md` |
 | Planning | `/plan-and-execute` + chunked plan (07-06) | task-planner skill | `implementation-plan.md`, `tasks.md` |
 | Implementation | `/build-feature` login, roles, filters, edit (07-07–09) | senior-developer skill | `src/backend/`, `src/frontend/` |
-| Testing | "verify every test pass" + roles/user tests (07-10) | `@testing` | `tests/backend/` (80 cases), `tests/frontend/` |
+| Testing | "verify every test pass" + roles/user tests (07-10) | `@testing` | `tests/backend/` (80 cases), `src/frontend/tests/` (23 cases) |
 | Debugging | Vite crypto, seed data, search, toast errors (07-06–07) | `@fix-error` | `error-utils.ts`, `SearchFilter.tsx` |
 | Review | `review the code`, `/find-bugs` (07-10) | `@review`, tech-lead-reviewer | `code-review-notes.md` |
 | Security | 16-file audit + implement fixes (07-10) | `@security`, security-expert | `src/backend/src/app.ts` hardening |
@@ -48,6 +48,7 @@ Evidence-based summary from `.copilot-sessions/` (2026-07-06 through 2026-07-10)
 |------------|----------|
 | Integration tests | `cd src/backend && npm run test:integration` (prompt 07-10 15:07) |
 | Frontend tests | `cd src/frontend && npm test` |
+| CI | `.github/workflows/ci.yml` on push/PR |
 | Manual UI | Kanban drag-drop, auth flows, admin CRUD |
 | Security review | Human decision on dummy hash proportionality |
 | API errors | curl repro of invalid PR link → toast shows exact message |

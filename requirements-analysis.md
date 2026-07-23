@@ -305,6 +305,29 @@ stateDiagram-v2
 
 ---
 
+## Edge Case Analysis
+
+Documented upfront and verified in tests (updated 2026-07-16 per review feedback).
+
+| Category | Edge case | Handling |
+|----------|-----------|----------|
+| State machine | Skip transition (e.g. Open → Resolved) | Backend 422; frontend hides invalid targets |
+| State machine | Transition from terminal state | Backend 422; DB trigger blocks direct UPDATE |
+| Concurrency | Two users change status simultaneously | Optimistic locking → 409 Conflict |
+| Validation | Empty/whitespace-only title | Zod `.trim()` + min length → 422 |
+| Validation | XSS in text fields | `sanitizeText()` strips HTML tags server-side |
+| Auth | Missing/expired JWT | 401 on protected routes |
+| Auth | Agent writes ticket | 403 via RBAC middleware |
+| Auth | JWT secret unset in production | App throws at startup (`config/env.ts`) |
+| Search | Partial keyword match | `ILIKE '%term%'` + trigram indexes |
+| Kanban | Invalid drop target | Client pre-check + API 422; card reverts |
+| Comments | Empty message | Zod validation → 422 |
+| Comments | Ticket not found | 404 |
+| Users | Duplicate email | Unique constraint + 400 |
+| Roles | Delete built-in role | Frontend block + backend guard |
+
+---
+
 ## Repository Structure
 
 ```

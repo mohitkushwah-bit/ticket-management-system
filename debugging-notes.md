@@ -164,3 +164,49 @@ Unnecessary for internal assessment; added complexity without meaningful threat 
 
 ### Final Fix
 **Rejected and removed** from `src/backend/src/services/auth.service.ts`.
+
+---
+
+## Issue 8: Supertest `mime.getType is not a function`
+
+**Session:** Post-submission integration test run (2026-07-15)
+
+### Problem
+Backend integration tests failed across all suites:
+```
+TypeError: mime.getType is not a function
+  at Test.getType [as type] (node_modules/superagent/src/node/index.js)
+```
+
+### How I Investigated
+Compared supertest v7 / superagent v10 `mime` import with Jest `moduleNameMapper` shim in `jest.config.js`.
+
+### How AI Helped
+Diagnosed version mismatch between `mime` 1.x (Express) and 2.x (superagent). Rewrote `test-support/mime-shim.cjs` to expose `getType` regardless of installed version.
+
+### What I Validated
+`cd src/backend && npm run test:integration` — 80/80 tests pass.
+
+### Final Fix
+Robust Jest shim mapping `^mime$` → `test-support/mime-shim.cjs`.
+
+---
+
+## Issue 9: React `act(...)` warnings in frontend tests
+
+**Session:** Post-submission frontend test cleanup (2026-07-15)
+
+### Problem
+Vitest passed but stderr showed `act(...)` warnings on async form submits in `UsersPage` and `RolesPage` tests.
+
+### How I Investigated
+Traced warnings to `setSubmitting` / `setSaving` state updates resolving outside `act` after mocked API calls.
+
+### How AI Helped
+Applied deferred promise pattern: mock API hangs until resolved inside `act(async () => { click; resolve(); })`. Adjusted page components to reset submitting state only on error path.
+
+### What I Validated
+`cd src/frontend && npm test` — 23 tests pass, zero `act` warnings.
+
+### Final Fix
+Test pattern in `UsersPage.test.tsx` / `RolesPage.test.tsx`; component submit handlers in `UsersPage.tsx` / `RolesPage.tsx`.

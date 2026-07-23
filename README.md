@@ -110,11 +110,19 @@ In Progress → Cancelled
 
 | Document | Description |
 |----------|-------------|
-| [tool-workflow.md](tool-workflow.md) | AI workflow foundation (Part A) |
-| [requirements-analysis.md](requirements-analysis.md) | Requirement analysis |
-| [design-notes.md](design-notes.md) | Architecture and design decisions |
+| [candidate-info.md](candidate-info.md) | Candidate details + **AI tool: GitHub Copilot (Claude)** |
+| [tool-workflow.md](tool-workflow.md) | AI workflow foundation (Part A) — **start here for AI evidence** |
+| [final-ai-usage-summary.md](final-ai-usage-summary.md) | Lifecycle prompt summary with artifact traceability |
+| [ai-prompts/](ai-prompts/) | Grouped prompt history + `prompt-history/` session logs |
+| [requirements-analysis.md](requirements-analysis.md) | Requirement analysis + edge cases |
+| [acceptance-criteria.md](acceptance-criteria.md) | Given/When/Then acceptance checklist |
+| [design-notes.md](design-notes.md) | Architecture and design trade-offs |
 | [api-contract.md](api-contract.md) | REST API contract |
-| [ai-prompts/](ai-prompts/) | Grouped AI prompt history |
+| [test-strategy.md](test-strategy.md) | Test scope, FE/BE coverage |
+| [debugging-notes.md](debugging-notes.md) | Debugging walkthroughs with AI assistance |
+| [code-review-notes.md](code-review-notes.md) | AI-assisted review findings |
+| [pr-description.md](pr-description.md) | PR summary linking requirements → code |
+| [reflection.md](reflection.md) | Honest AI usage reflection |
 
 See `screenshots.pdf` for UI screenshots.
 

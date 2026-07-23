@@ -33,7 +33,20 @@
 - [x] Ticket CRUD integration tests pass
 - [x] Comment integration tests pass
 - [x] Tests run via `cd src/backend && npm run test:integration`
-- [x] Frontend component test for EditTicketPage passes
+- [x] Frontend tests: 7 suites / 23 cases in `src/frontend/tests/` (pages + KanbanBoard)
+- [x] CI workflow runs backend + frontend tests (`.github/workflows/ci.yml`)
+
+## Edge Cases (Documented & Tested)
+
+| Edge case | Expected behavior | Evidence |
+|-----------|-------------------|----------|
+| Open → Resolved (skip step) | Rejected 422 | `state-machine.test.ts` |
+| Closed/Cancelled → any status | Rejected 422 | `state-machine.test.ts` |
+| Concurrent status update | Rejected 409 | `ticket.service.ts` + tests |
+| Invalid Kanban drop | Card snaps back; toast error | `KanbanBoard.test.tsx` + manual |
+| XSS in ticket title | HTML stripped server-side | `validation-schemas.ts` + `sanitize.ts` |
+| Missing JWT in production | Server refuses to start | `config/env.ts` |
+| DB direct invalid status UPDATE | Trigger raises exception | `002_status_transition_trigger.sql` |
 
 ## Documentation
 

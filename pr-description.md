@@ -31,7 +31,7 @@ Built primarily with GitHub Copilot (Claude) across 5 development sessions (2026
 src/frontend/     # React 18 + Vite (10 pages, common component library)
 src/backend/      # Express + TypeScript (31 source files, layered architecture)
 tests/backend/    # 5 Jest suites, ~80 test cases
-tests/frontend/   # EditTicketPage component test
+src/frontend/tests/  # 7 Vitest suites, 23 test cases
 database/         # Consolidated migration + seed data
 ```
 
@@ -40,7 +40,8 @@ database/         # Consolidated migration + seed data
 - `models/state-machine.ts` — canonical transition rules
 - `services/ticket.service.ts` — 422 on invalid transition, 409 on concurrent update
 - Zod validation via `routes/validation-schemas.ts`
-- Security: helmet, CORS, rate limit, 10kb body limit (session 2026-07-10)
+- Security: helmet, CORS, rate limit, 10kb body limit, input sanitization (session 2026-07-10, 2026-07-16)
+- JWT: `JWT_SECRET` required in production (min 32 chars); test-only fallback in `config/env.ts`
 
 ### Frontend (`src/frontend/src/`)
 - Lazy-loaded routes (`App.tsx`)
@@ -53,6 +54,7 @@ database/         # Consolidated migration + seed data
 ## Database Changes
 
 - **Migration:** `database/migrations/001_initial_schema.sql` (merged 2026-07-10)
+- **Migration:** `database/migrations/002_status_transition_trigger.sql` — DB-level state machine enforcement (2026-07-16)
   - Tables: `roles`, `users`, `tickets`, `comments`
   - Enums: `ticket_priority`, `ticket_status`
   - Extension: `pg_trgm` for search

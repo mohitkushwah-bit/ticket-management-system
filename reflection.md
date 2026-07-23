@@ -203,3 +203,22 @@ File-type instructions (`coding-standards`, `design-system`, `integration-tests`
 AI accelerated this project significantly — especially scaffolding, test generation, security hardening, and iterative optimization. However, it did not replace human judgment on business rules, security proportionality, architectural decisions, or final acceptance testing.
 
 The `.github/` customization layer was the highest-leverage investment: it turned generic AI assistance into a repeatable, auditable SDLC workflow that can be ported to future projects.
+
+---
+
+## 11. Review Feedback Response (2026-07-16)
+
+External review scored the submission **72/100 (Developing)** with gaps in AI workflow visibility, frontend testing depth, debugging evidence, and security hardening.
+
+**Actions taken:**
+
+| Review gap | Response |
+|------------|----------|
+| No visible prompt history | Added `ai-prompts/README.md` index; README links `tool-workflow.md` + `final-ai-usage-summary.md` |
+| Minimal frontend tests | Expanded to 7 Vitest suites (23 cases) including Kanban |
+| Shallow debugging evidence | Added Issues 8–9 to `debugging-notes.md` with investigation walkthrough |
+| JWT secret hardcoded | `config/env.ts` enforces secret in production (min 32 chars); `.env.example` added |
+| DB constraints weak | `002_status_transition_trigger.sql` enforces state machine at DB layer |
+| No CI | `.github/workflows/ci.yml` runs BE + FE tests |
+| Input sanitization | `sanitizeText()` in Zod schemas strips HTML from user text |
+| No edge case analysis | Added section to `requirements-analysis.md` + `acceptance-criteria.md` |

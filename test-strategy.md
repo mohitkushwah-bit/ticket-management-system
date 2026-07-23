@@ -10,8 +10,8 @@ Aligned with implemented test suites in `tests/` and prompts from `.copilot-sess
 | P1 | Ticket CRUD + validation | Core business functionality |
 | P1 | Comment create/list/validation | Core collaboration feature |
 | P2 | User and role CRUD (admin) | Stretch RBAC feature |
-| P3 | Frontend EditTicketPage component | Representative UI test |
-| Manual | Kanban drag-drop, auth flows | Visual/interaction verification |
+| P3 | Frontend page + component tests | 7 Vitest suites covering list, create, edit, users, roles, Kanban |
+| Manual | Auth flows, profile update | Visual verification |
 
 ## Unit Tests
 
@@ -23,11 +23,19 @@ Aligned with implemented test suites in `tests/` and prompts from `.copilot-sess
 
 | File | Framework | What it tests |
 |------|-----------|---------------|
-| `tests/frontend/EditTicketPage.test.tsx` | Vitest + RTL + jsdom | Form prefill from API, field edit, submit calls `ticketService.update`, navigation on success |
+| `src/frontend/tests/TicketListPage.test.tsx` | Vitest + RTL | List render, filters, navigation, read-only guard |
+| `src/frontend/tests/CreateTicketPage.test.tsx` | Vitest + RTL | Form submit, API call, navigation |
+| `src/frontend/tests/EditTicketPage.test.tsx` | Vitest + RTL | Form prefill, update, toast |
+| `src/frontend/tests/UsersPage.test.tsx` | Vitest + RTL | User CRUD form flows |
+| `src/frontend/tests/RolesPage.test.tsx` | Vitest + RTL | Role CRUD, built-in role protection |
+| `src/frontend/tests/KanbanBoard.test.tsx` | Vitest + RTL | Column layout, drag rules, callbacks |
+| `src/frontend/tests/KanbanPage.test.tsx` | Vitest + RTL | Board load, ticket navigation |
 
-**Setup:** `src/frontend/src/test/setup.ts` (jest-dom matchers)  
-**Config:** `src/frontend/vitest.config.ts` includes `../../tests/frontend/**/*.{test,spec}.{ts,tsx}`  
-**Mocks:** `ticketService`, `userService`, `useNavigate` — services mocked, not internal layers
+**Total:** 23 frontend test cases (run `cd src/frontend && npm test`)
+
+**Setup:** `src/frontend/src/test/setup.ts` (jest-dom + act environment)  
+**Config:** `src/frontend/vitest.config.ts` includes `tests/**/*.{test,spec}.{ts,tsx}`  
+**Mocks:** `tests/shared-mocks.ts`, `tests/fixtures.ts` — services and router mocked at boundary
 
 **Prompt origin (2026-07-06):** *"Use react testing library for react/frontend tests"*
 
@@ -89,10 +97,10 @@ Covered in integration suites:
 |-----|--------|
 | E2E (Playwright/Cypress) | State machine proven at API layer; Kanban verified manually |
 | State machine unit tests | Covered by 11 integration cases — sufficient for assessment |
-| Full frontend page coverage | One representative RTL test per 2026-07-06 plan scope |
-| `KanbanBoard` component test | DnD requires complex @dnd-kit mock setup; API tests cover transitions |
+| Full frontend page coverage | Addressed 2026-07-16: 7 RTL suites in `src/frontend/tests/` |
+| `KanbanBoard` component test | Implemented with @dnd-kit mock (`KanbanBoard.test.tsx`) |
 | Load/performance tests | Out of scope for internal tool |
-| CI pipeline execution | No `.github/workflows/ci.yml` yet; tests run locally |
+| CI pipeline execution | `.github/workflows/ci.yml` — backend + frontend on push/PR |
 | Auth token refresh | Feature not implemented |
 
 ## Traceability
